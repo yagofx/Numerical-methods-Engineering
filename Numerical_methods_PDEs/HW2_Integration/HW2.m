@@ -79,6 +79,54 @@ disp(['Eror_rel of g2: ', num2str(Err_rel(2))]);
 disp(['Eror_rel of g3: ', num2str(Err_rel(3))]);
 disp(['Eror_rel of g4: ', num2str(Err_rel(4))]);
 
+load g5.mat
+
+%--------------------------------------------------------------------------
+% Discrete non-uniform Trapezoidal integration
+
+n = length(strain);
+
+I5_trap = 0;
+
+for i =1:n-1
+
+    I5_trap = (stress(i) + stress(i+1))/2*(strain(i+1) - strain(i)) + I5_trap;
+
+end
+disp('-----------------------------------------')
+disp(['non-unfiform Trapezoidal rule:']);
+disp(['I5_trap: ', num2str(I5_trap)]);
+
+%--------------------------------------------------------------------------
+% Discrete non-uniform Simpson integration
+
+N = length(strain)-1;
+
+% Calculate delta_h
+h = zeros(N,1);
+for i = 1:N
+    h(i) = strain(i+1)-strain(i);
+end
+
+I5_simp = 0;
+
+ for i = 1:2:N-2
+    I5_simp = I5_simp + 1/6*((((h(i+1)+h(i+2))*(2*h(i+1)-h(i+2)))/h(i+1))*stress(i) + (h(i+1)+h(i+2))^3/(h(i+1)*h(i+2))*stress(i+1) + ((h(i+1)+h(i+2))*(2*h(i+2)+-h(i+1)))/h(i+2)*stress(i+2));
+end
+
+% Handle the case of an odd number of intervals
+if mod(N, 2) == 1
+    h0 = h(N - 1);
+    h1 = h(N);
+    I5_simp = I5_simp + stress(N + 1) * (2 * h1^2 + 3 * h0 * h1) / (6 * (h0 + h1)) + stress(N) * (h1^2 + 3 * h1 * h0) / (6 * h0) - stress(N - 1) * h1^3 / (6 * h0 * (h0 + h1));
+end
+
+disp('-----------------------------------------')
+disp(['non-unfiform Simpson rule:']);
+disp(['I5_simp: ', num2str(I5_simp)]);
+
+
+
 
 %--------------------------------------------------------------------------
 % Function to compute Legendre-Gauss nodes and weights
@@ -91,5 +139,3 @@ function [x, w] = legendre_gauss_nodes_weights(n)
     x = diag(D);                              % Nodes (roots of the polynomial)
     w = 2 * (V(1,:).^2)';                     % Weights
 end
-
-
