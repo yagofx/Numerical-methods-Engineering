@@ -28,16 +28,16 @@
 
     <!-- conditions -->
     <container n='conditions' pn='Conditions' help="Boundary conditions to be used in the analysis." tree_state="open">
-    <condition n='cutomatic_inlet_velociy' pn='Automatic inlet velocity' ov="line" ovm="condition" icon="drag" help="Normal velocity to be used in the analysis">
+    <condition n='cutomatic_inlet_velociy' pn='Automatic inlet velocity' ov="point,line" ovm="node" icon="drag" help="Normal velocity to be used in the analysis">
         <value n="velocity" pn="value" v="10" unit_magnitude="L/T" units="m/s" help="Specify the module of the velocity"/>
     </condition>
-    <condition n='outlet_pressure' pn='Outlet pressure' ov="line" ovm="condition" icon="drag" help="Outlet pressure to be used in the analysis">
+    <condition n='outlet_pressure' pn='Outlet pressure' ov="point,line" ovm="node" icon="drag" help="Outlet pressure to be used in the analysis">
         <value n="pressure" pn="pressure" v="0.0" unit_magnitude="M/(L*T^2)" units="kg/(m*s^2)" help="Specify the outlet pressure"/> 
     </condition>
-    <condition n='slip' pn='Slip' ov="line" ovm="condition" icon="drag" help="Assign slip BC in the analysis"> 
+    <condition n='slip' pn='Slip' ov="point,line" ovm="node" icon="drag" help="Assign slip BC in the analysis"> 
         <value n=''/>
     </condition>
-     <condition n='no_Slip' pn='No slip' ov="line" ovm="condition" icon="drag" help="Assign no_slip BC in the analysis"> 
+     <condition n='no_Slip' pn='No slip' ov="point,line" ovm="node" icon="drag" help="Assign no_slip BC in the analysis"> 
         <value n=''/>
     </condition>
     </container>
