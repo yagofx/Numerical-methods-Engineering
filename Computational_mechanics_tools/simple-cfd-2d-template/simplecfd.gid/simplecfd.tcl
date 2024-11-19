@@ -11,12 +11,12 @@ proc SimpleCFD::Init { } {
 
     # TODO: Add here the id of your fluid from the spd.
     # if your spd has: <condition n="fluid" ... > then you should set element_id "fluid"
-    set element_id "YOUR FLUID CONDITION ID"
+    set element_id "fluid"
     # TODO: Add here the list of ids of tyour boundary conditions from the spd
     # if your spd has: <condition n="inlet" ... > then you should add "inlet" to the list
     # if your spd has: <condition n="outlet" ... > then you should add "outlet" to the list
     # ...
-    set boundary_conditions_list [list "YOUR_BOUNDARY_CONDITION_ID_1" "YOUR_BOUNDARY_CONDITION_ID_2"]
+    set boundary_conditions_list [list "automatic_inlet_velocity" "outlet_pressure" "slip" "no_slip"]
 
     set conditions_list [concat $element_id $boundary_conditions_list]
 }
