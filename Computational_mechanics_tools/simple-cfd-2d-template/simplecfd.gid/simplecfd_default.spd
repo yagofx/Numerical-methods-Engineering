@@ -25,6 +25,8 @@
         <value n="density" pn="Density" v="1000" unit_magnitude="M/L^3" units="kg/m^3" help="Specify the density of the fluid"/> 
         <value n="viscosity" pn="Viscosity" v="0.001" unit_magnitude="M/(L*T)" units="kg/(m*s)" help="Specify the viscosity of the fluid"/> 
     </condition>
+
+    <!-- Embedded parts -->
     <condition n="skin" pn="Structure" ov="line,surface,volume" ovm="node,element" icon="shells" help="Domain of structure to be studied">
     </condition>
 
