@@ -1,4 +1,0 @@
-{
-    "model_part_name" : "FluidModelPart.$modelpart_name",
-    "element_name"  : "$element_name"
-}
