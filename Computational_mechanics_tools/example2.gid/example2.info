@@ -1,0 +1,148 @@
+ |  /           |                  
+ ' /   __| _` | __|  _ \   __|    
+ . \  |   (   | |   (   |\__ \  
+_|\_\_|  \__,_|\__|\___/ ____/
+           Multi-Physics 9.5."0"-master-c14ffffd07-Release-x86_64
+           Compiled for Windows and Python3.12 with MSVC-1941
+Compiled with threading support.
+Maximum number of threads: 12.
+Importing    KratosFluidDynamicsApplication 
+Initializing KratosFluidDynamicsApplication...
+NavierStokesMonolithicSolver: Construction of NavierStokesMonolithicSolver finished. 
+NavierStokesMonolithicSolver: Fluid solver variables added correctly. 
+[WARNING] Model: Trying to create a root modelpart with name FluidModelPart however a ModelPart with the same name already exists. 
+Returning the already existent ModelPart.
+SingleImportModelPart: Reading model part from file: "C:\\Users\\YagoFX\\Documents\\Master_MN\\Computational_Mechanics_Tools\\example2.gid\\example2".mdpa
+ModelPartIO:   [Reading Nodes    : 5817 nodes read]
+ModelPartIO:   [Reading Geometries : 11292 geometries read] [Type: Triangle2D3]
+ModelPartIO:   [Reading Geometries : 50 geometries read] [Type: Line2D2]
+ModelPartIO:   [Reading Geometries : 50 geometries read] [Type: Line2D2]
+ModelPartIO:   [Reading Geometries : 100 geometries read] [Type: Line2D2]
+ModelPartIO:   [Reading Geometries : 140 geometries read] [Type: Line2D2]
+ModelPartIO:   [Total Lines Read : 35302]
+SingleImportModelPart: Finished reading model part from mdpa file.
+::[PythonSolver]::: Reading model part. 
+::[PythonSolver]::: Using already imported model part - no reading necessary. 
+ModelPart: -FluidModelPart- model part
+    Buffer Size : 1
+    Number of tables : 0
+    Number of sub model parts : 5
+    Current solution step index : 0
+    DOMAIN_SIZE : 2
+
+    Number of Geometries  : 11632
+    Mesh 0 :
+        Number of Nodes       : 5817
+        Number of Properties  : 1
+        Number of Elements    : 11292
+        Number of Conditions  : 340
+        Number of Constraints : 0
+
+    -Automatic_inlet_velocity_Auto1- model part
+        Number of tables : 0
+        Number of sub model parts : 0
+
+        Number of Geometries  : 50
+        Mesh 0 :
+            Number of Nodes       : 51
+            Number of Properties  : 0
+            Number of Elements    : 0
+            Number of Conditions  : 50
+            Number of Constraints : 0
+    -Fluid_Auto1- model part
+        Number of tables : 0
+        Number of sub model parts : 0
+
+        Number of Geometries  : 11292
+        Mesh 0 :
+            Number of Nodes       : 5817
+            Number of Properties  : 0
+            Number of Elements    : 11292
+            Number of Conditions  : 0
+            Number of Constraints : 0
+    -No_slip_Auto1- model part
+        Number of tables : 0
+        Number of sub model parts : 0
+
+        Number of Geometries  : 140
+        Mesh 0 :
+            Number of Nodes       : 141
+            Number of Properties  : 0
+            Number of Elements    : 0
+            Number of Conditions  : 140
+            Number of Constraints : 0
+    -Outlet_pressure_Auto1- model part
+        Number of tables : 0
+        Number of sub model parts : 0
+
+        Number of Geometries  : 50
+        Mesh 0 :
+            Number of Nodes       : 51
+            Number of Properties  : 0
+            Number of Elements    : 0
+            Number of Conditions  : 50
+            Number of Constraints : 0
+    -Slip_Auto1- model part
+        Number of tables : 0
+        Number of sub model parts : 0
+
+        Number of Geometries  : 100
+        Mesh 0 :
+            Number of Nodes       : 101
+            Number of Properties  : 0
+            Number of Elements    : 0
+            Number of Conditions  : 100
+            Number of Constraints : 0
+ 
+::[PythonSolver]:: : Finished reading model part. 
+Read materials: Started
+[WARNING] ReadMaterialsUtility: Materials for SubModelPart "FluidModelPart.Fluid_Auto1" is overriding Parent-ModelPart "FluidModelPart"!
+[WARNING] ReadMaterialsUtility: WARNING:: The properties ID: 0 is already defined in model part FluidModelPart. This will overwrite the existing values
+Read materials: No Deprecated method called in "C:\Program Files\Kratos\bin\Release\KratosMultiphysics\analysis_stage.py" in line 322: Iterating through "Parameters" object is deprecated, please use the "values" method instead
+Deprecated method called in "C:\Program Files\Kratos\bin\Release\KratosMultiphysics\model_parameters_factory.py" in line 86: Iterating through "Parameters" object is deprecated, please use the "values" method instead
+FluidModelPart.Fluid_Auto1
+variables defined for material ID: 0
+Read materials: No tables defined for material ID: 0
+Read materials: No constitutive law defined for material ID: 0
+Read materials: Finished
+[WARNING] DEPRECATION-Warning; CheckAndPrepareModelProcessFluid: Construction from model part is deprecated. Please provide a 'Model' container and use full model part names. 
+[WARNING] DEPRECATION-Warning; CheckAndPrepareModelProcessFluid: Partial model part name 'Fluid_Auto1' found in 'volume_model_part_name'. Please provide full model part names. 
+[WARNING] DEPRECATION-Warning; CheckAndPrepareModelProcessFluid: Partial model part name 'Automatic_inlet_velocity_Auto1' found in 'skin_parts'. Please provide full model part names. 
+[WARNING] DEPRECATION-Warning; CheckAndPrepareModelProcessFluid: Partial model part name 'No_slip_Auto1' found in 'skin_parts'. Please provide full model part names. 
+[WARNING] DEPRECATION-Warning; CheckAndPrepareModelProcessFluid: Partial model part name 'Outlet_pressure_Auto1' found in 'skin_parts'. Please provide full model part names. 
+[WARNING] DEPRECATION-Warning; CheckAndPrepareModelProcessFluid: Partial model part name 'Slip_Auto1' found in 'skin_parts'. Please provide full model part names. 
+TetrahedralMeshOrientationCheck: No inverted elements found
+No inverted conditions found
+NavierStokesMonolithicSolver: Model reading finished. 
+NavierStokesMonolithicSolver: Fluid solver DOFs added correctly. 
+[WARNING] DEPRECATION-Warning; AssignVectorByDirectionProcess: Found 'mesh_id' in input settings. This is no longer required and can be removed. 
+[WARNING] VtkOutput: Modelpart "fluid_computational_model_part" has both elements and conditions.
+Giving precedence to elements and writing only elements!
+Linear-Solver-Factory: Constructing a regular (non-complex) linear-solver 
+NavierStokesMonolithicSolver: Solver initialization finished. 
+Fluid Dynamics Analysis: Analysis -START-  
+Fluid Dynamics Analysis: STEP:  1 
+Fluid Dynamics Analysis: TIME:  0.1 
+Fluid Dynamics Analysis: STEP:  2 
+Fluid Dynamics Analysis: TIME:  0.2 
+Fluid Dynamics Analysis: STEP:  3 
+Fluid Dynamics Analysis: TIME:  0.30000000000000004 
+Fluid Dynamics Analysis: STEP:  4 
+Fluid Dynamics Analysis: TIME:  0.4 
+Fluid Dynamics Analysis: STEP:  5 
+Fluid Dynamics Analysis: TIME:  0.5 
+Fluid Dynamics Analysis: STEP:  6 
+Fluid Dynamics Analysis: TIME:  0.6 
+Fluid Dynamics Analysis: STEP:  7 
+Fluid Dynamics Analysis: TIME:  0.7 
+Fluid Dynamics Analysis: STEP:  8 
+Fluid Dynamics Analysis: TIME:  0.7999999999999999 
+Fluid Dynamics Analysis: STEP:  9 
+Fluid Dynamics Analysis: TIME:  0.8999999999999999 
+Fluid Dynamics Analysis: STEP:  10 
+Fluid Dynamics Analysis: TIME:  0.9999999999999999 
+Fluid Dynamics Analysis: STEP:  11 
+Fluid Dynamics Analysis: TIME:  1.0999999999999999 
+Fluid Dynamics Analysis: Analysis -END-  
+Deregistering FluidDynamicsApplication
+Deregistering KratosMultiphysics

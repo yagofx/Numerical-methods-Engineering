@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="utf-8"?><simplecfd version="1.0">
+  <style show_menubutton_about="0" show_menubutton_search="1"/>
+  <!--Units-->
+  <units/>
+  <container n="units" pn="Units" icon="darkorange-length-18" tree_state="active,selected,close">
+    <value n="units_mesh" pn="Geometry units" unit_mesh_definition="1" state="disabled"/>
+    <value n="units_system" pn="Units system" units_system_definition="1" state="disabled">
+      <dependencies node="//*[@unit_definition or @unit_mesh_definition='1']" att1="change_units_system" v1="{@v}"/>
+    </value>
+    <container n="basic_units" pn="Basic units" icon="units" help="Basic units to be used in the analysis." tree_state="open">
+      <value n="units_length" pn="Length" unit_definition="L"/>
+      <value n="units_mass" pn="Mass" unit_definition="M"/>
+      <value n="units_time" pn="Time" unit_definition="T"/>
+    </container>
+  </container>
+  <!-- Simple CFD 2D -->
+  <container n="simplecfd2d" pn="Simple CFD" tree_state="open">
+    <!-- Fluid parts -->
+    <condition n="fluid" pn="Fluid" ov="surface,volume" ovm="node,element" icon="drop" help="Domain of fluid" tree_state="close">
+      <value n="density" pn="Density" v="1000" unit_magnitude="M/L^3" units="kg/m^3" help="Specify the density of the fluid"/>
+      <value n="viscosity" pn="Viscosity" v="0.001" unit_magnitude="M/(L*T)" units="kg/(m*s)" help="Specify the viscosity of the fluid"/>
+      <group n="Fluid Auto1" ov="surface" tree_state="open">
+        <value n="density" pn="Density" v="1.293" unit_magnitude="M/L^3" units="kg/m^3" help="Specify the density of the fluid" state="normal"/>
+        <value n="viscosity" pn="Viscosity" v="1.81e-5" unit_magnitude="M/(L*T)" units="kg/(m*s)" help="Specify the viscosity of the fluid" state="normal"/>
+      </group>
+    </condition>
+    <!-- conditions -->
+    <container n="conditions" pn="Conditions" help="Boundary conditions to be used in the analysis." tree_state="open">
+      <condition n="automatic_inlet_velocity" pn="Automatic inlet velocity" ov="line,surface" ovm="node,element" icon="drag" help="Normal velocity to be used in the analysis" tree_state="close">
+        <value n="velocity" pn="Value" v="10" unit_magnitude="L/T" units="m/s" help="Specify the module of the velocity"/>
+        <group n="Automatic inlet velocity Auto1" ov="line" tree_state="open">
+          <value n="velocity" pn="Value" v="10" unit_magnitude="L/T" units="m/s" help="Specify the module of the velocity" state="normal"/>
+        </group>
+      </condition>
+      <condition n="outlet_pressure" pn="Outlet pressure" ov="line,surface" ovm="node,element" icon="drag" help="Outlet pressure to be used in the analysis" tree_state="close">
+        <value n="pressure" pn="Value" v="0.0" unit_magnitude="M/(L*T^2)" units="kg/(m*s^2)" help="Specify the outlet pressure"/>
+        <group n="Outlet pressure Auto1" ov="line" tree_state="open">
+          <value n="pressure" pn="Value" v="0.0" unit_magnitude="M/(L*T^2)" units="kg/(m*s^2)" help="Specify the outlet pressure" state="normal"/>
+        </group>
+      </condition>
+      <condition n="slip" pn="Slip" ov="line,surface" ovm="node,element" icon="drag" help="Assign slip BC in the analysis" tree_state="close">
+        <group n="Slip Auto1" ov="line" tree_state="close"/>
+      </condition>
+      <condition n="no_slip" pn="No slip" ov="line,surface" ovm="node,element" icon="drag" help="Assign no_slip BC in the analysis" tree_state="close">
+        <group n="No slip Auto1" ov="line" tree_state="open"/>
+      </condition>
+    </container>
+    <!-- Strategy parameters -->
+    <container n="strategy_parameters" pn="Strategy parameters" icon="settings" tree_state="open">
+      <value n="max_iterations" pn="Maximum iterations" v="10.0" state="normal" tree_state="close"/>
+      <value n="rel_vel_tol" pn="Relative velocity tolerance" v="1e-5" state="normal" tree_state="close"/>
+      <value n="abs_vel_tol" pn="Absolute velocity tolerance" v="1e-7" state="normal" tree_state="close"/>
+      <value n="rel_press_tol" pn="Relative pressure tolerance" v="1e-5" state="normal" tree_state="close"/>
+      <value n="abs_press_tol" pn="Absolute pressure tolerance" v="1e-7" state="normal" tree_state="close"/>
+    </container>
+    <!-- Time paramters -->
+    <container n="time_parameters" pn="Time parameters" tree_state="open">
+      <value n="delta_time" pn="Delta time" v="0.1" unit_magnitude="T" units="s" icon="time1" state="normal" tree_state="close"/>
+      <value n="end_time" pn="End time" v="1" unit_magnitude="T" units="s" icon="time2" state="normal" tree_state="close"/>
+    </container>
+  </container>
+  <groups>
+    <group n="Fluid Auto1" onoff="1" color="magenta" type=""/>
+    <group n="Automatic inlet velocity Auto1" onoff="1" color="green" type=""/>
+    <group n="Outlet pressure Auto1" onoff="1" color="yellow" type=""/>
+    <group n="No slip Auto1" onoff="1" color="pink" type=""/>
+    <group n="Slip Auto1" onoff="1" color="orange" type=""/>
+  </groups>
+  <display_options frame_width="285" is_frame_open="1" view_conditions_search="0" conditions_search_values=""/>
+  <global_preferences>
+    <units>
+      <unit_magnitude_user_sel n="T" values="s"/>
+      <unit_magnitude_user_sel n="L/T" values="m/s"/>
+      <unit_magnitude_user_sel n="M/(L*T^2)" values="kg/(m*s^2)"/>
+      <unit_magnitude_user_sel n="M/L^3" values="kg/m^3"/>
+      <unit_magnitude_user_sel n="M/(L*T)" values="kg/(m*s)"/>
+    </units>
+    <tree_preferences/>
+  </global_preferences>
+  <blockdata n="Internal data">
+    <value n="spd_file" v="C:/Users/YagoFX/Documents/Master_MN/Computational_Mechanics_Tools/example1.gid/example1.spd"/>
+  </blockdata>
+</simplecfd>
+
