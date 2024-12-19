@@ -1,0 +1,14 @@
+<Infoproblemtype version="1.0">
+    <Program>
+        <Name>Simple CFD</Name>
+        <Version>1.0</Version>
+        <CustomLibAutomatic>1</CustomLibAutomatic>
+        <CustomLibNativeGroups>1</CustomLibNativeGroups>
+        <MinimumGiDVersion>16</MinimumGiDVersion>
+        <ImageFileBrowser>images/ico.png</ImageFileBrowser>
+        <Maintainer>yago.trias@estudiantat.upc.edu</Maintainer>
+        <Homepage>https://www.gidsimulation.com</Homepage>
+        <ShortDescription>Interface GiD-Kratos Fluid Dynamics Application</ShortDescription>
+        <Description>Interface GiD-Kratos Fluid Dynamics Application</Description>
+    </Program>
+</Infoproblemtype>
