@@ -41,7 +41,7 @@ class Model_part:
         self.U_m = 0.005                        # Amplitude of the prescribed displacement
         self.m = 2                              # Frequency
         self.time_span = 1                      # Time span
-        self.steps = 100                          # Time steps
+        self.steps = 100                         # Time steps
         self.vec_T = np.linspace(0, self.time_span, self.steps + 1)
         self.U_t = self.U_m * np.sin(self.m * np.pi * self.vec_T / self.time_span)
 
@@ -64,7 +64,7 @@ class Model_part:
 class Solver_params:
     def __init__(self):
         self.max_iter = 10              # Number of maximum iteration by the solver
-        self.tol = 1e-12                # Minimum tolerance to achieve
+        self.tol = 1e-8                # Minimum tolerance to achieve
 
 class Reference_element:
     def __init__(self, p):
@@ -249,7 +249,7 @@ def Update_damage(Main_model, n):
         sigma_bar = E*strain
         tau_epsilon = np.sqrt(strain*sigma_bar)
 
-        if tau_epsilon < r:
+        if tau_epsilon <= r:
             r_updated = r
             damage_updated = damage
             stress = (1-damage)*sigma_bar
@@ -264,6 +264,7 @@ def Update_damage(Main_model, n):
             Etan = (1-damage_updated)*E - ((q-H*r_updated)/(r_updated)**3)*(sigma_bar*sigma_bar)
 
         #Update values
+        print("tau_epsi", tau_epsilon, "r", r, "damage: ", damage)
         Main_model.r[ele, n+1] = r_updated
         Main_model.damage[ele, n+1] = damage_updated
         Main_model.stress[ele, n+1] = stress
@@ -288,7 +289,7 @@ def Compute_variables(Main_model, Element, U, n):
         h = Xe[1]- Xe[0]
 
         Nxi_ig = Nxi*2/h
-        U_local = U[Te]
+        U_local = U[Te].reshape(-1, 1)
 
         # Compute strain
         strain =np.dot(Nxi_ig, U_local)
@@ -390,13 +391,13 @@ def main():
         print(f"Time step {n}")
         print("%-----------------------------------------------------------------------")
         U_step[-1] = Main_model.U_t[n]
-        #print("Imposed Ut", Main_model.U_t[n])
+        #print("U_step", U_step)
 
         # Solve nonlinear system
         U_step = Newton_Raphson(Main_model, Solver, Element, U_step, n)
         #print("U_step", U_step)
 
-        Main_model.U[:,n] = U_step.flatten()  # Store results at each time step
+        Main_model.U[:,n] = U_step.flatten()
         Compute_variables(Main_model, Element, Main_model.U[:,n], n)
         Update_damage(Main_model, n)
         
@@ -406,7 +407,7 @@ def main():
     #plot_stress(Main_model)
     plot_strain_and_stress(Main_model)
     plot_midpoint_data(Main_model)
-    animate_displacement(Main_model)
+    #animate_displacement(Main_model)
 #-----------------------------------------------------------------
 
 
