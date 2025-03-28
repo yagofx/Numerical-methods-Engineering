@@ -17,10 +17,14 @@ import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.animation import FuncAnimation
 
+#-----------------------------------------------------------------
+#                       Classes
+#-----------------------------------------------------------------
+
 class Model_part:
     def __init__(self):
         self.L = 1                                                  # Length of the beam (m)
-        self.nEle = 6                                               # Number of elements
+        self.nEle = 20                                              # Number of elements
         self.nNodes = self.nEle + 1                                 # Number of nodes
         self.X = np.linspace(0,self.L,self.nNodes)                  # Coordinates of nodes 
         self.T = np.array([[i, i + 1] for i in range(self.nEle)])   # Connectivity of the elements
@@ -37,8 +41,8 @@ class Model_part:
         self.U_m = 0.005                        # Amplitude of the prescribed displacement
         self.m = 2                              # Frequency
         self.time_span = 1                      # Time span
-        self.steps = 10                         # Time steps
-        self.vec_T = np.linspace(0, self.time_span, self.steps)
+        self.steps = 100                          # Time steps
+        self.vec_T = np.linspace(0, self.time_span, self.steps + 1)
         self.U_t = self.U_m * np.sin(self.m * np.pi * self.vec_T / self.time_span)
 
         # Damage model
@@ -49,18 +53,18 @@ class Model_part:
         self.A_hs = 0.1
         
         # Damage variables
-        self.strain = np.zeros((self.nEle, self.steps))
-        self.stress = np.zeros((self.nEle, self.steps))
+        self.strain = np.zeros((self.nEle, self.steps+1))
+        self.stress = np.zeros((self.nEle, self.steps+1))
 
-        self.Etan = np.zeros((self.nEle, self.steps))
+        self.Etan = np.zeros((self.nEle, self.steps+1))
 
-        self.r = np.zeros((self.nEle, self.steps))
-        self.damage =np.zeros((self.nEle, self.steps))
+        self.r = self.r_0*np.ones((self.nEle, self.steps+1))
+        self.damage =np.zeros((self.nEle, self.steps+1))
   
 class Solver_params:
     def __init__(self):
         self.max_iter = 10              # Number of maximum iteration by the solver
-        self.tol = 1e-8                 # Minimum tolerance to achieve
+        self.tol = 1e-12                # Minimum tolerance to achieve
 
 class Reference_element:
     def __init__(self, p):
@@ -70,16 +74,20 @@ class Reference_element:
             self.nZ = 1
             self.W_g = 2
 
+            self.Ni = np.array([[(1-self.Z_g)/2, (1+self.Z_g)/2,]])
             self.Nxi = np.array([[-1/2, 1/2]])
 
-def plot_displacement(Main_model):
 
-    for i in range(Main_model.nNodes):
-        plt.plot(Main_model.vec_T, Main_model.U[i, :], label=f'Node {i+1}')
+#-----------------------------------------------------------------
+#                   Plotting
+#-----------------------------------------------------------------
+def plot_displacement(Main_model):
+    for n in range(Main_model.steps):
+        plt.plot(Main_model.X, Main_model.U[:, n], label=f'Time Step {n+1}')
     
     plt.xlabel('Position X (m)')
     plt.ylabel('Displacement (m)')
-    plt.title('Displacement at each element')
+    plt.title('Displacement at each node over time')
     plt.legend()
     plt.grid(True)
     plt.show()
@@ -110,7 +118,7 @@ def plot_strain_and_stress(Main_model):
     fig, ax = plt.subplots(2, 1, figsize=(10, 8))  # Create two subplots, one for strain and one for stress
 
     # Plot strain
-    for n in range(Main_model.steps):
+    for n in range(0,Main_model.steps,1):
         ax[0].plot(range(1, Main_model.nEle + 1), Main_model.strain[:, n], label=f'Time Step {n+1}')
     ax[0].set_xlabel('Element')
     ax[0].set_ylabel('Strain')
@@ -119,7 +127,7 @@ def plot_strain_and_stress(Main_model):
     ax[0].grid(True)
 
     # Plot stress
-    for n in range(Main_model.steps):
+    for n in range(0,Main_model.steps,1):
         ax[1].plot(range(1, Main_model.nEle + 1), Main_model.stress[:, n], label=f'Time Step {n+1}')
     ax[1].set_xlabel('Element')
     ax[1].set_ylabel('Stress (Pa)')
@@ -130,6 +138,8 @@ def plot_strain_and_stress(Main_model):
     # Adjust the layout for better display
     plt.tight_layout()
     plt.show()
+
+
 
 def animate_displacement(Main_model):
     fig, ax = plt.subplots()
@@ -153,6 +163,43 @@ def animate_displacement(Main_model):
     ani = FuncAnimation(fig, update, frames=Main_model.steps, interval=100)
     plt.show()
 
+def plot_midpoint_data(Main_model):
+    midpoint_element = 9  # Adjust for zero-based indexing
+
+    fig, axes = plt.subplots(1, 3, figsize=(15, 5), sharey=False)
+
+    # Plot stress over time
+    axes[0].plot(Main_model.vec_T, Main_model.stress[midpoint_element, :], label='Stress')
+    axes[0].set_xlabel('Time (s)')
+    axes[0].set_ylabel('Stress')
+    axes[0].set_title(f'Stress at Element {midpoint_element + 1}')
+    axes[0].legend()
+    axes[0].grid(True)
+
+    # Plot damage over time
+    axes[1].plot(Main_model.vec_T, Main_model.damage[midpoint_element, :], label='Damage', color='red')
+    axes[1].set_xlabel('Time (s)')
+    axes[1].set_ylabel('Damage')
+    axes[1].set_title(f'Damage at Element {midpoint_element + 1}')
+    axes[1].legend()
+    axes[1].grid(True)
+
+    # Plot stress vs strain
+    axes[2].plot(Main_model.strain[midpoint_element, :], Main_model.stress[midpoint_element, :], label='Stress-Strain', color='orange')
+    axes[2].set_xlabel('Strain')
+    axes[2].set_ylabel('Stress')
+    axes[2].set_title(f'Stress-Strain at Element {midpoint_element + 1}')
+    axes[2].legend()
+    axes[2].grid(True)
+
+    plt.tight_layout()
+    plt.show()
+
+
+#-----------------------------------------------------------------
+#                   Model
+#-----------------------------------------------------------------
+
 def Area(Main_model, x):
     A_max = Main_model.A_max
     A_min = Main_model.A_min
@@ -166,12 +213,64 @@ def Area(Main_model, x):
 
     return A
 
+
 def q_hardening_law(Main_model,r):
 
-    q_r = Main_model.q_inf -(Main_model.q_inf - Main_model.r_0)*np.exp(Main_model.A_hs*(1-r/Main_model.r_0))
+    q_inf = Main_model.q_inf
+    r_0 = Main_model.r_0
+    A_hs = Main_model.A_hs
+
+    q_r = q_inf -(q_inf - r_0)*np.exp(A_hs*(1-r/r_0))
 
     return q_r
 
+def H_hardening_law(Main_model,r):
+
+    q_inf = Main_model.q_inf
+    r_0 = Main_model.r_0
+    A_hs = Main_model.A_hs
+
+    H_r = A_hs*(q_inf - r_0)/r_0*np.exp(A_hs*(1-r/r_0))
+
+    return H_r
+
+
+def Update_damage(Main_model, n):
+    # Update damage model
+
+    nEle = Main_model.nEle
+    E = Main_model.E
+
+    for ele in range(0,nEle):
+        strain = Main_model.strain[ele, n]
+        damage = Main_model.damage[ele, n]
+        r = Main_model.r[ele,n]
+
+        sigma_bar = E*strain
+        tau_epsilon = np.sqrt(strain*sigma_bar)
+
+        if tau_epsilon < r:
+            r_updated = r
+            damage_updated = damage
+            stress = (1-damage)*sigma_bar
+            Etan = (1-damage)*E
+
+        elif tau_epsilon > r:
+            r_updated = tau_epsilon
+            q = q_hardening_law(Main_model, r)
+            H = H_hardening_law(Main_model,r)
+            damage_updated = 1-q/r_updated
+            stress = (1-damage)*sigma_bar
+            Etan = (1-damage_updated)*E - ((q-H*r_updated)/(r_updated)**3)*(sigma_bar*sigma_bar)
+
+        #Update values
+        Main_model.r[ele, n+1] = r_updated
+        Main_model.damage[ele, n+1] = damage_updated
+        Main_model.stress[ele, n+1] = stress
+        Main_model.Etan[ele, n+1] = Etan
+
+    return print("Damage model updated")
+    
 
 def Compute_variables(Main_model, Element, U, n):
     # Compute strains and stresss of elements
@@ -191,19 +290,14 @@ def Compute_variables(Main_model, Element, U, n):
         Nxi_ig = Nxi*2/h
         U_local = U[Te]
 
-        d = Main_model.damage[ele,n]
-        E = Main_model.E
-        
-        # Compute strain and stress
+        # Compute strain
         strain =np.dot(Nxi_ig, U_local)
-        stress = (1-d)*E*strain
 
         Main_model.strain[ele, n] = strain
-        Main_model.stress[ele, n] = stress
-    return print("Strains & Stress computed")
+    return print("Strains computed")
 
 
-def Assemble_K_global(Main_model, Element):
+def Assemble_K_global(Main_model, Element, n):
 
     nNodes = Main_model.nNodes
     nEle = Main_model.nEle
@@ -212,6 +306,7 @@ def Assemble_K_global(Main_model, Element):
     X = Main_model.X
     T = Main_model.T
 
+    Ni = Element.Ni
     Nxi = Element.Nxi
     nZ = Element.nZ
     W_g = Element.W_g
@@ -228,17 +323,21 @@ def Assemble_K_global(Main_model, Element):
         
         X_midpoint = (Xe[1] + Xe[0])/2
         A = Area(Main_model, X_midpoint)
+        Etan = Main_model.Etan[ele,n]
 
         h = Xe[1]- Xe[0]
 
         Ke = np.zeros((2,2))
         for ig in range(0, nZ):
+            Ni_ig = Ni
             Nxi_ig = Nxi*2/h
-            #print("Nxi", Nxi_ig)
             w_ig = W_g*h/2
-            #print("Nxi_ig", Nxi_ig, "W_ig", w_ig)
-            
-            Ke += w_ig * (Nxi_ig.T @ (E * A * Nxi_ig))
+
+            X_ig = np.dot(Ni_ig, Xe)
+            A_ig = Area(Main_model, X_ig)
+            Etan = Main_model.Etan[ele,n]
+
+            Ke += A_ig*w_ig * (Nxi_ig.T @ (Etan * Nxi_ig))
             #print("Ke", Ke)
         
         K_global[np.ix_(Te, Te)] += Ke
@@ -253,20 +352,15 @@ def Newton_Raphson(Main_model, Solver, Element, U_step, n):
 
     fixed_dofs = Main_model.fixed_dofs
     free_dofs = Main_model.free_dofs
-    #print("Fixed DOFs:", fixed_dofs, "Free DOFs:", free_dofs)
 
     for i in range(max_iter + 1):
-        print(f"Nonlinear iteration {i} solver")
 
-        # Assemble global stiffness matrix
-        K_global = Assemble_K_global(Main_model, Element)
-        #print("Global K", K_global)
-
+        K_global = Assemble_K_global(Main_model, Element, n)
         R = -np.dot(K_global, U_step)
-        print("Residual",R)
-        R[fixed_dofs] = 0.0
+        Rnorm = np.linalg.norm(R[free_dofs])
+        print(f"NL iter: {i}, |R|: {Rnorm}")
 
-        if np.linalg.norm(R) < tol :  # Convergence check
+        if Rnorm < tol:
             print(f"Converged in {i} iterations!")
             return U_step
         
@@ -276,7 +370,7 @@ def Newton_Raphson(Main_model, Solver, Element, U_step, n):
         
         U_step[free_dofs] += delta_u
         U_step[fixed_dofs] = np.array([0.0, Main_model.U_t[n]]).reshape(-1, 1)
-        print(f"U {i}", U_step)
+        #print(f"U {i}", U_step)
 
     return U_step
 
@@ -285,17 +379,16 @@ def main():
     Main_model = Model_part()
     Solver = Solver_params()
 
-    # Define element properties
-    p = 1   # Order of the element
+    p = 1
     Element = Reference_element(p)
 
-    # Initialize displacement matrix (nNodes × time steps)
     Main_model.U = np.zeros((Main_model.nNodes, Main_model.steps), dtype=float)
-    #print("U_T", Main_model.U_t)
 
     U_step = np.zeros((Main_model.nNodes, 1), dtype=float)
     for n in range(Main_model.steps):
+        print("%-----------------------------------------------------------------------")
         print(f"Time step {n}")
+        print("%-----------------------------------------------------------------------")
         U_step[-1] = Main_model.U_t[n]
         #print("Imposed Ut", Main_model.U_t[n])
 
@@ -305,14 +398,15 @@ def main():
 
         Main_model.U[:,n] = U_step.flatten()  # Store results at each time step
         Compute_variables(Main_model, Element, Main_model.U[:,n], n)
+        Update_damage(Main_model, n)
         
 
-    # Plot displacement, plot strains, plot stresses
     plot_displacement(Main_model)
     #plot_strain(Main_model)
     #plot_stress(Main_model)
     plot_strain_and_stress(Main_model)
-    #animate_displacement(Main_model)
+    plot_midpoint_data(Main_model)
+    animate_displacement(Main_model)
 #-----------------------------------------------------------------
 
 
