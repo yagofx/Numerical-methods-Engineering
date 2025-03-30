@@ -3,7 +3,7 @@
 #               Computational Solid Mechanics - Assignment damage
 #                   
 #               Authors: Gabriel Ayu, David Conteras, Yago Trias
-#               Co-authors: Matteo Giaccomini (el pro)
+#   
 #
 #-----------------------------------------------------------------
 
@@ -15,6 +15,7 @@
 
 import numpy as np
 import matplotlib.pyplot as plt
+import time as tp   
 from matplotlib.animation import FuncAnimation
 
 #-----------------------------------------------------------------
@@ -24,7 +25,7 @@ from matplotlib.animation import FuncAnimation
 class Model_part:
     def __init__(self):
         self.L = 1                                                  # Length of the beam (m)
-        self.nEle = 20                                              # Number of elements
+        self.nEle = 5                                               # Number of elements
         self.nNodes = self.nEle + 1                                 # Number of nodes
         self.X = np.linspace(0,self.L,self.nNodes)                  # Coordinates of nodes 
         self.T = np.array([[i, i + 1] for i in range(self.nEle)])   # Connectivity of the elements
@@ -41,8 +42,8 @@ class Model_part:
         self.U_m = 0.005                        # Amplitude of the prescribed displacement
         self.m = 2                              # Frequency
         self.time_span = 1                      # Time span
-        self.steps = 100                         # Time steps
-        self.vec_T = np.linspace(0, self.time_span, self.steps + 1)
+        self.steps = 40                         # Time steps
+        self.vec_T = np.linspace(0, self.time_span, self.steps)
         self.U_t = self.U_m * np.sin(self.m * np.pi * self.vec_T / self.time_span)
 
         # Damage model
@@ -51,20 +52,23 @@ class Model_part:
         self.beta_hs = 1.5
         self.q_inf = self.beta_hs*self.r_0
         self.A_hs = 0.1
-        
+
         # Damage variables
-        self.strain = np.zeros((self.nEle, self.steps+1))
-        self.stress = np.zeros((self.nEle, self.steps+1))
+        self.r = np.zeros((self.nEle, self.steps))
+        self.r[:,0] = self.r_0
+        self.damage =np.zeros((self.nEle, self.steps))
+        
+        self.strain = np.zeros((self.nEle, self.steps))
+        self.stress = np.zeros((self.nEle, self.steps))
 
         self.Etan = np.zeros((self.nEle, self.steps+1))
+        self.Etan[:,0] = self.E
 
-        self.r = self.r_0*np.ones((self.nEle, self.steps+1))
-        self.damage =np.zeros((self.nEle, self.steps+1))
   
 class Solver_params:
     def __init__(self):
         self.max_iter = 10              # Number of maximum iteration by the solver
-        self.tol = 1e-8                # Minimum tolerance to achieve
+        self.tol = 1e-16                # Minimum tolerance to achieve
 
 class Reference_element:
     def __init__(self, p):
@@ -164,7 +168,7 @@ def animate_displacement(Main_model):
     plt.show()
 
 def plot_midpoint_data(Main_model):
-    midpoint_element = 9  # Adjust for zero-based indexing
+    midpoint_element = 2  # Adjust for zero-based indexing
 
     fig, axes = plt.subplots(1, 3, figsize=(15, 5), sharey=False)
 
@@ -197,7 +201,7 @@ def plot_midpoint_data(Main_model):
 
 
 #-----------------------------------------------------------------
-#                   Model
+#                   FE Model
 #-----------------------------------------------------------------
 
 def Area(Main_model, x):
@@ -243,32 +247,41 @@ def Update_damage(Main_model, n):
 
     for ele in range(0,nEle):
         strain = Main_model.strain[ele, n]
-        damage = Main_model.damage[ele, n]
-        r = Main_model.r[ele,n]
+        if n == 0:
+            r = Main_model.r_0
+            damage = 0
+        else:
+            r = Main_model.r[ele,n-1]
+            damage = Main_model.damage[ele, n-1]
 
+        # Step 1
         sigma_bar = E*strain
         tau_epsilon = np.sqrt(strain*sigma_bar)
 
+
+        # Step 2
         if tau_epsilon <= r:
             r_updated = r
             damage_updated = damage
-            stress = (1-damage)*sigma_bar
-            Etan = (1-damage)*E
+            stress_updated = (1-damage_updated)*sigma_bar
+            Etan_updated = (1-damage_updated)*E 
 
+
+        # Step 3
         elif tau_epsilon > r:
             r_updated = tau_epsilon
-            q = q_hardening_law(Main_model, r)
-            H = H_hardening_law(Main_model,r)
+            q = q_hardening_law(Main_model, r_updated)
+            H = H_hardening_law(Main_model,r_updated)
             damage_updated = 1-q/r_updated
-            stress = (1-damage)*sigma_bar
-            Etan = (1-damage_updated)*E - ((q-H*r_updated)/(r_updated)**3)*(sigma_bar*sigma_bar)
+            stress_updated = (1-damage_updated)*sigma_bar
+            Etan_updated = (1-damage_updated)*E - ((q-H*r_updated)/(r_updated**3))*(sigma_bar*sigma_bar)
 
         #Update values
-        print("tau_epsi", tau_epsilon, "r", r, "damage: ", damage)
-        Main_model.r[ele, n+1] = r_updated
-        Main_model.damage[ele, n+1] = damage_updated
-        Main_model.stress[ele, n+1] = stress
-        Main_model.Etan[ele, n+1] = Etan
+        #print("strain:", strain,"sigma_bar", sigma_bar,"tau_epsi", tau_epsilon, "r", r_updated, "damage: ", damage_updated, )
+        Main_model.r[ele, n] = r_updated
+        Main_model.damage[ele, n] = damage_updated
+        Main_model.stress[ele, n] = stress_updated
+        Main_model.Etan[ele, n+1] = Etan_updated
 
     return print("Damage model updated")
     
@@ -311,19 +324,12 @@ def Assemble_K_global(Main_model, Element, n):
     Nxi = Element.Nxi
     nZ = Element.nZ
     W_g = Element.W_g
-
-    #Constituve model
-    E = Main_model.E
-
     
     K_global = np.zeros((nNodes, nNodes))
     for ele in range(0,nEle):
         Te = T[ele,:]
         Xe = X[Te]
 
-        
-        X_midpoint = (Xe[1] + Xe[0])/2
-        A = Area(Main_model, X_midpoint)
         Etan = Main_model.Etan[ele,n]
 
         h = Xe[1]- Xe[0]
@@ -339,8 +345,7 @@ def Assemble_K_global(Main_model, Element, n):
             Etan = Main_model.Etan[ele,n]
 
             Ke += A_ig*w_ig * (Nxi_ig.T @ (Etan * Nxi_ig))
-            #print("Ke", Ke)
-        
+
         K_global[np.ix_(Te, Te)] += Ke
 
 
@@ -354,9 +359,10 @@ def Newton_Raphson(Main_model, Solver, Element, U_step, n):
     fixed_dofs = Main_model.fixed_dofs
     free_dofs = Main_model.free_dofs
 
+    K_global = Assemble_K_global(Main_model, Element, n)
+
     for i in range(max_iter + 1):
 
-        K_global = Assemble_K_global(Main_model, Element, n)
         R = -np.dot(K_global, U_step)
         Rnorm = np.linalg.norm(R[free_dofs])
         print(f"NL iter: {i}, |R|: {Rnorm}")
@@ -365,6 +371,7 @@ def Newton_Raphson(Main_model, Solver, Element, U_step, n):
             print(f"Converged in {i} iterations!")
             return U_step
         
+    
         K_uu = K_global[free_dofs, :][:, free_dofs]
         
         delta_u = np.linalg.solve(K_uu, R[free_dofs])
@@ -375,8 +382,10 @@ def Newton_Raphson(Main_model, Solver, Element, U_step, n):
 
     return U_step
 
-
 def main():
+
+    start_time = tp.perf_counter()
+
     Main_model = Model_part()
     Solver = Solver_params()
 
@@ -391,20 +400,22 @@ def main():
         print(f"Time step {n}")
         print("%-----------------------------------------------------------------------")
         U_step[-1] = Main_model.U_t[n]
-        #print("U_step", U_step)
+
 
         # Solve nonlinear system
+
         U_step = Newton_Raphson(Main_model, Solver, Element, U_step, n)
-        #print("U_step", U_step)
 
         Main_model.U[:,n] = U_step.flatten()
         Compute_variables(Main_model, Element, Main_model.U[:,n], n)
         Update_damage(Main_model, n)
         
 
+    end_time = tp.perf_counter()
+    execution_time = end_time - start_time
+    print("Execution time:", execution_time, "seconds")
+
     plot_displacement(Main_model)
-    #plot_strain(Main_model)
-    #plot_stress(Main_model)
     plot_strain_and_stress(Main_model)
     plot_midpoint_data(Main_model)
     #animate_displacement(Main_model)
