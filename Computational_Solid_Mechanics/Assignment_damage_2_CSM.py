@@ -14,6 +14,7 @@
 #-----------------------------------------------------------------
 
 import numpy as np
+import csv
 import matplotlib.pyplot as plt
 import time as tp   
 from matplotlib.animation import FuncAnimation
@@ -65,7 +66,6 @@ class Model_part:
         self.stress = np.zeros((self.nEle, self.steps))
 
         self.Etan = self.E*np.ones((self.nEle, self.steps))
-        #self.Etan[:,0] = self.E
 
   
 class Solver_params:
@@ -413,11 +413,14 @@ def Newton_Raphson(Main_model, Solver, Element, U_step, n):
         Main_model.damage[:,n] = Main_model.damage[:, n-1]
         Main_model.Etan[:,n] = Main_model.Etan[:,n-1]
 
+    nl_iterations = []
+
     for i in range(max_iter + 1):
         
         R = -f_internal(Main_model, Element, U_step, n)
         Rnorm = np.linalg.norm(R[free_dofs])
         print(f"NL iter: {i}, |R|: {Rnorm}")
+        nl_iterations.append([i, Rnorm])
 
         if Rnorm < tol:
             print(f"Converged in {i} iterations!")
@@ -432,6 +435,13 @@ def Newton_Raphson(Main_model, Solver, Element, U_step, n):
         U_step[free_dofs] += delta_u
         U_step[fixed_dofs] = np.array([0.0, Main_model.U_t[n]]).reshape(-1, 1)
         Update_damage(Main_model, Element, U_step, n)
+
+    with open('Residuals.csv', 'a', newline='') as csvfile:
+        writer = csv.writer(csvfile)
+        writer.writerow([f"Time step {n}"])
+        writer.writerow(['Iteration', 'ResidualNorm'])
+        writer.writerows(nl_iterations)
+        writer.writerow([])  # Empty line to separate time steps
 
     return U_step
 
