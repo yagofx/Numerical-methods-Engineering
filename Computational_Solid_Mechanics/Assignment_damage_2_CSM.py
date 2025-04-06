@@ -2,7 +2,7 @@
 #
 #               Computational Solid Mechanics - Assignment damage
 #                   
-#               Authors: Gabriel Ayu, David Conteras, Yago Trias
+#               Authors: Gabriel Ayu, Yago Trias
 #   
 #
 #-----------------------------------------------------------------
@@ -17,6 +17,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import time as tp   
 from matplotlib.animation import FuncAnimation
+import generate_VTK
 
 #-----------------------------------------------------------------
 #                       Classes
@@ -382,8 +383,8 @@ def f_internal(Main_model, Element, U_step, n):
         f_ele = np.zeros((2, 1))
         for ig in range(nZ):
             Ni_ig = Ni
-            Nxi_ig = Nxi * 2 / h
-            w_ig = W_g * h / 2
+            Nxi_ig = Nxi*2/h
+            w_ig = W_g*h/2
 
             X_ig = np.dot(Ni_ig, Xe)
             A_ig = Area(Main_model, X_ig)
@@ -424,9 +425,6 @@ def Newton_Raphson(Main_model, Solver, Element, U_step, n):
         
         K_global = Assemble_K_global(Main_model, Element, n)
         K_uu = K_global[free_dofs, :][:, free_dofs]
-        # print("free_dofs:", free_dofs)
-        # print("K_uu shape:", K_uu.shape)
-        # print("K_uu:\n", K_uu)
         
         
         delta_u = np.linalg.solve(K_uu, R[free_dofs])
@@ -434,8 +432,6 @@ def Newton_Raphson(Main_model, Solver, Element, U_step, n):
         U_step[free_dofs] += delta_u
         U_step[fixed_dofs] = np.array([0.0, Main_model.U_t[n]]).reshape(-1, 1)
         Update_damage(Main_model, Element, U_step, n)
-
-        #print(f"U {i}", U_step)
 
     return U_step
 
@@ -463,6 +459,8 @@ def main():
         U_step = Newton_Raphson(Main_model, Solver, Element, U_step, n)
         Main_model.U[:,n] = U_step.flatten()
         Main_model.strain[:, n] = Compute_Strain(Main_model, Element,  Main_model.U[:,n])
+
+        generate_VTK.write_vtk(Main_model, n, filename="solution")
         
 
     end_time = tp.perf_counter()
@@ -472,7 +470,7 @@ def main():
     plot_displacement(Main_model)
     plot_strain_and_stress(Main_model)
     plot_midpoint_data(Main_model)
-    #animate_displacement(Main_model)
+    animate_displacement(Main_model)
 #-----------------------------------------------------------------
 
 
