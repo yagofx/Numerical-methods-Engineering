@@ -43,7 +43,7 @@ class Model_part:
         self.U_m = 0.001                                # Amplitude of the prescribed displacement
         self.m = 2.5                                    # Frequency
         self.time_span = 1                              # Time span
-        self.steps = 200                                # Time steps
+        self.steps = 1000                               # Time steps
         self.delta_t = self.time_span/self.steps        # Delta t
         self.vec_T = np.linspace(0, self.time_span, self.steps)
         self.U_t = self.U_m * np.sin(self.m * np.pi * self.vec_T / self.time_span)
@@ -179,7 +179,7 @@ def animate_displacement(Main_model):
     plt.show()
 
 def plot_midpoint_data(Main_model):
-    midpoint_element = 2  # Adjust for zero-based indexing
+    midpoint_element = round(Main_model.nEle/2)  # Adjust for zero-based indexing
 
     fig, axes = plt.subplots(1, 3, figsize=(15, 5), sharey=False)
 
