@@ -40,19 +40,20 @@ class Model_part:
         self.A_min = 0.001
 
         # Dirichlet 
-        self.U_m = 0.005                     # Amplitude of the prescribed displacement
-        self.m = 2
-        self.A = 0.05                         # Frequency
-        self.time_span = 1                    # Time span
-        self.steps = 200                      # Time steps
+        self.U_m = 0.001                     # Amplitude of the prescribed displacement
+        self.m = 2.5                           # Frequency
+        self.time_span = 1                   # Time span
+        self.steps = 200                     # Time steps
         self.vec_T = np.linspace(0, self.time_span, self.steps)
         self.U_t = self.U_m * np.sin(self.m * np.pi * self.vec_T / self.time_span)
         #self.U_t = (self.A * self.vec_T + self.U_m) * np.sin(self.m * np.pi * self.vec_T / self.time_span)
 
         # Plasticity model
-        self.E = 2.1e+11        # Young's Modulus
-        self.K = 2e+10          # Isotropic hardening parameters
-        self.H = 1e+9           # Kinematic hardening parameters
+        self.E = 2.1e+11            # Young's Modulus
+        self.K = 5.0e+10            # Isotropic hardening parameters
+        self.H = 1.0e+10            # Kinematic hardening parameters
+        #self.K = 0
+        #self.H = 0
         self.sigma_y = 4.2e+8        # Yield Stress
 
         self.C = np.diag([self.E, self.K, self.H])
@@ -248,7 +249,6 @@ def Area(Main_model, x):
 
 def Update_Plasticity(Main_model, Element, U_step):
     nEle = Main_model.nEle
-    C = Main_model.C
     E = Main_model.E
     K = Main_model.K
     H = Main_model.H
@@ -256,57 +256,58 @@ def Update_Plasticity(Main_model, Element, U_step):
 
     E_p = Main_model.E_p
     strain = Compute_Strain(Main_model, Element, U_step)
+    stress = Main_model.stress
     Main_model.strain = strain
     print("Total strain:", strain)
 
     for ele in range(nEle):
-        strain_local = strain[ele]
 
-        # Strain plastic vector
-        strain_plastic = E_p[ele]
-        strain_p = strain_plastic[0]
-        chi = strain_plastic[1]
-        chi_bar = strain_plastic[2]
+        sstress, qq, qq_bar = stress[ele]
+
+        strain_local = strain[ele]
+        strain_p, chi, chi_bar = E_p[ele]
 
         strain_e = strain_local - strain_p
-        #print("strain_p", strain_p, "strain_e", strain_e)
+        sigma = strain_e * E
+        q = -chi * K
+        q_bar = -chi_bar * H
 
-        # Step 1: Trial stress
-        sigma = strain_e*E
-        q = -chi*K
-        q_bar = -chi_bar*H
-
-        # Step 2: Check for yielding
         f_trial = np.abs(sigma - q_bar) - sigma_y + q
 
         if f_trial <= 0:
-            # Elastic update
-            gamma = 0
             Etan_updated = E
 
-        elif f_trial > 0:
-            # Plastic update
+            sigma_updated = sigma
+            q_updated = qq
+            q_bar_updated = qq_bar
+
+            strain_p_updated = strain_p
+            chi_updated = chi
+            chi_bar_updated = chi_bar
+
+        else:
             gamma = (E + K + H)**(-1) * f_trial
-            Etan_updated = E * (1 - E * (E + K + H)**(-1))
+            sign = np.sign(sigma - q_bar)
 
-        # Update stress and plastic strain
-        sign = np.sign(sigma - q_bar)
+            sigma_updated = sigma - gamma*E*sign
+            q_updated = q - gamma*K
+            q_bar_updated = q_bar + gamma*H*sign
+            Etan_updated = E * (1 - E*(E + K + H)**(-1))
 
-        sigma_updated = sigma - gamma*E*sign
-        q_updated = q - gamma*K
-        q_bar_updated = q_bar + gamma*H*sign
+            strain_p_updated = strain_p + gamma * sign
+            chi_updated = chi + gamma
+            chi_bar_updated = chi_bar - gamma * sign
+
         stress_updated = np.array([[sigma_updated, q_updated, q_bar_updated]])
+        strain_p_vec = np.array([[strain_p_updated, chi_updated, chi_bar_updated]])
 
-        str_p_updated = strain_p + gamma*sign
-        chi_updated = chi + gamma
-        chi_bar_updated = chi_bar - gamma*sign
-        strain_p_updated = np.array([[str_p_updated, chi_updated, chi_bar_updated]])
-        print("ele:",ele,"strain_e:", strain_e,"chi:", chi,"chi_bar:", chi_bar,"sigma:", sigma, "q:", q, "q_bar:", q_bar, "f_trial:", f_trial, "gamma:", gamma,"sign:", sign, "sigma_upd", sigma_updated, "strain_p_upd", str_p_updated)
+        print(f"ele: {ele}, strain_e: {strain_e}, f_trial: {f_trial}, sigma: {sigma}, sign: {np.sign(sigma - q_bar)}, gamma: {gamma if f_trial > 0 else 0}, strain_p_upd: {strain_p_updated}")
 
-        # Update values in Main_model
-        Main_model.E_p[ele] = strain_p_updated
+        # Save updated variables
+        Main_model.E_p[ele] = strain_p_vec
         Main_model.stress[ele, :] = stress_updated
         Main_model.Etan[ele] = Etan_updated
+
     return
 
 def Compute_Strain(Main_model, Element, U):
