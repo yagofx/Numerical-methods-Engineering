@@ -43,7 +43,7 @@ class Model_part:
         self.U_m = 0.001                     # Amplitude of the prescribed displacement
         self.m = 2.5                           # Frequency
         self.time_span = 1                   # Time span
-        self.steps = 1000                     # Time steps
+        self.steps = 200                     # Time steps
         self.vec_T = np.linspace(0, self.time_span, self.steps)
         self.U_t = self.U_m * np.sin(self.m * np.pi * self.vec_T / self.time_span)
         #self.U_t = (self.A * self.vec_T + self.U_m) * np.sin(self.m * np.pi * self.vec_T / self.time_span)
