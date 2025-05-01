@@ -106,6 +106,8 @@ def Update_Plasticity(Main_model, input_strain_tensor):
     H = Main_model.H
     sigma_y = Main_model.sigma_y
     mu = Main_model.mu
+    eta = Main_model.eta
+    delta_t = Main_model.delta_t
 
     strain_p = Main_model.strain_p
     chi = Main_model.chi
@@ -127,11 +129,11 @@ def Update_Plasticity(Main_model, input_strain_tensor):
     norm_s = np.linalg.norm(s_rel)
     f_trial = norm_s - np.sqrt(2.0 / 3.0)*(sigma_y - q_trial)
 
-    print("f_trial:", f_trial)
+    #print("f_trial:", f_trial)
 
     if f_trial <= 0:
 
-        gamma = 0.0
+        plastic_multi = 0.0
         n = np.zeros((3,3))
 
         sigma_updated = sigma_trial
@@ -144,17 +146,17 @@ def Update_Plasticity(Main_model, input_strain_tensor):
 
     else:
 
-        gamma = (2*mu + 2/3*K + 2/3*H)**(-1)*f_trial
+        plastic_multi = (2*mu + 2/3*K + 2/3*H + eta/delta_t)**(-1)*f_trial
 
         n = s_rel / norm_s
 
-        sigma_updated = sigma_trial - 2*mu*gamma*n
-        q_updated = q_trial - K*gamma*np.sqrt(2.0 / 3.0)
-        q_bar_updated = q_bar_trial + (2.0 / 3.0)*H*gamma*n
+        sigma_updated = sigma_trial - 2*mu*plastic_multi*n
+        q_updated = q_trial - K*plastic_multi*np.sqrt(2.0 / 3.0)
+        q_bar_updated = q_bar_trial + (2.0 / 3.0)*H*plastic_multi*n
 
-        strain_p_updated = strain_p + gamma*n
-        chi_updated = chi + gamma*np.sqrt(2.0 / 3.0)
-        chi_bar_updated = chi_bar - gamma*n
+        strain_p_updated = strain_p + plastic_multi*n
+        chi_updated = chi + plastic_multi*np.sqrt(2.0 / 3.0)
+        chi_bar_updated = chi_bar - plastic_multi*n
     
     #Update variables in object
     Main_model.stress = sigma_updated
