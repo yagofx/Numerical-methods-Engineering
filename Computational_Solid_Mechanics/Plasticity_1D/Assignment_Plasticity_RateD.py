@@ -42,8 +42,8 @@ class Model_part:
         # Dirichlet 
         self.U_m = 0.001                                # Amplitude of the prescribed displacement
         self.m = 2.5                                    # Frequency
-        self.time_span = 1                              # Time span
-        self.steps = 1000                               # Time steps
+        self.time_span = 5                              # Time span
+        self.steps = 200                               # Time steps
         self.delta_t = self.time_span/self.steps        # Delta t
         self.vec_T = np.linspace(0, self.time_span, self.steps)
         self.U_t = self.U_m * np.sin(self.m * np.pi * self.vec_T / self.time_span)
@@ -52,10 +52,10 @@ class Model_part:
         # Plasticity model
         self.E = 2.1e+11            # Young's Modulus
         self.K = 5.0e+10            # Isotropic hardening parameter
-        self.H = 1.0e+10            # Kinematic hardening parameter
+        #self.H = 1.0e+10            # Kinematic hardening parameter
         self.eta = 5.0e+10          # Viscosity parameter
         #self.K = 0
-        #self.H = 0
+        self.H = 0
         self.sigma_y = 4.2e+8        # Yield Stress
 
         self.C = np.diag([self.E, self.K, self.H])
@@ -73,9 +73,6 @@ class Model_part:
         self.stress2 = np.zeros((self.nEle, self.steps))
         self.plasticity = np.zeros((self.nEle, self.steps))
 
-
-
-  
 class Solver_params:
     def __init__(self):
         self.max_iter = 10             # Number of maximum iteration by the solver
@@ -235,12 +232,6 @@ def export_results_to_csv(Main_model, prefix="results"):
 #-----------------------------------------------------------------
 #                   FE Model
 #-----------------------------------------------------------------
-
-def McAuley(x):
-    if x > 0:
-        return x
-    else:
-        return 0
 
 def Area(Main_model, x):
     A_max = Main_model.A_max
@@ -495,7 +486,9 @@ def main():
     plot_displacement(Main_model)
     plot_strain_and_stress(Main_model)
     plot_midpoint_data(Main_model)
-    #export_results_to_csv(Main_model)
+    #export_results_to_csv(Main_model
+    data = np.vstack((Main_model.strain2[2,:], Main_model.stress2[2,:])).T  # shape: (steps, 2)
+    np.savetxt("Linear_hardening_RateD.csv", data, delimiter=',', header='strain,stress', comments='')
 
     #animate_displacement(Main_model)
 #-----------------------------------------------------------------

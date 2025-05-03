@@ -8,7 +8,7 @@ class Model_part:
     def __init__(self):
 
         #Time discretisation
-        self.time_span = 1                                                  # Total time
+        self.time_span =    1                                               # Total time
         self.steps = 200                                                   # Time steps
         self.delta_t = self.time_span/self.steps                            # delta t
         self.time_vector = np.linspace(0, self.time_span, self.steps)       # time vector
@@ -32,7 +32,7 @@ class Model_part:
         self.lamb = self.nu*self.E/((1 + self.nu)*(1 - 2*self.nu))  # Lame lambda
         self.mu = self.E/(2*(1 + self.nu))  # Shear elastic modulus
 
-        self.C = np.zeros((3, 3, 3, 3))
+        self.C = np.zeros((3, 3, 3, 3)) # Isotropic elastic constitutive tensor
 
         for i in range(3):
             for j in range(3):

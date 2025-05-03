@@ -1,17 +1,17 @@
-#-----------------------------------------------------------------
+#--------------------------------------------------------------------------------------------
 #
-#               Computational Solid Mechanics - Assignment damage
+#               Computational Solid Mechanics - Assignment Plasticity
 #                   
-#               Authors: Gabriel Ayu, Yago Trias
+#               Authors: Gabriel Ayú Prado, Yago Trias
 #   
 #
-#-----------------------------------------------------------------
+#--------------------------------------------------------------------------------------------
 
-#-----------------------------------------------------------------
+#--------------------------------------------------------------------------------------------
 #
-#               FE for 1D Beam damage model
+#               FE for 1D Beam with Nonlinear Rate Dependent Plasticity Model
 #
-#-----------------------------------------------------------------
+#--------------------------------------------------------------------------------------------
 
 import numpy as np
 import csv
@@ -20,9 +20,9 @@ import time as tp
 from matplotlib.animation import FuncAnimation
 import generate_VTK
 
-#-----------------------------------------------------------------
+#--------------------------------------------------------------------------------------------
 #                       Classes
-#-----------------------------------------------------------------
+#--------------------------------------------------------------------------------------------
 
 class Model_part:
     def __init__(self):
@@ -40,21 +40,27 @@ class Model_part:
         self.A_min = 0.001
 
         # Dirichlet 
-        self.U_m = 0.001                     # Amplitude of the prescribed displacement
-        self.m = 2.5                           # Frequency
-        self.time_span = 1                   # Time span
-        self.steps = 200                     # Time steps
+        self.U_m = 0.001                                # Amplitude of the prescribed displacement
+        self.m = 2.5                                    # Frequency
+        self.time_span = 60                             # Time span
+        self.steps = 200 + 1                            # Time steps
+        self.delta_t = self.time_span/self.steps        # Delta t
         self.vec_T = np.linspace(0, self.time_span, self.steps)
+
         self.U_t = self.U_m * np.sin(self.m * np.pi * self.vec_T / self.time_span)
-        #self.U_t = (self.A * self.vec_T + self.U_m) * np.sin(self.m * np.pi * self.vec_T / self.time_span)
+        #self.U_t = self.U_m * self.vec_T * np.sin(self.m * np.pi * self.vec_T / self.time_span)
 
         # Plasticity model
         self.E = 2.1e+11            # Young's Modulus
         self.K = 5.0e+10            # Isotropic hardening parameters
-        #self.H = 1.0e+10            # Kinematic hardening parameters
-        #self.K = 0
-        self.H = 0
-        self.sigma_y = 4.2e+8        # Yield Stress
+        self.H = 1.0e+10            # Kinematic hardening parameters
+        self.eta = 5.0e+10          # Viscosity parameter
+        # self.K = 0
+        # self.H = 0
+        self.sigma_y = 4.2e+8       # Yield Stress
+        self.sigma_inf = 2.0e+9     # Maximum Asymptotic Stress
+        self.delta = 150.0          # Saturation parameter
+
 
         self.C = np.diag([self.E, self.K, self.H])
 
@@ -71,9 +77,6 @@ class Model_part:
         self.stress2 = np.zeros((self.nEle, self.steps))
         self.plasticity = np.zeros((self.nEle, self.steps))
 
-
-
-  
 class Solver_params:
     def __init__(self):
         self.max_iter = 10             # Number of maximum iteration by the solver
@@ -91,12 +94,12 @@ class Reference_element:
             self.Nxi = np.array([[-1/2, 1/2]])
 
 
-#-----------------------------------------------------------------
+#-----------------------------------------------------------------------------------------------------
 #                   Plotting
-#-----------------------------------------------------------------
+#-----------------------------------------------------------------------------------------------------
 def plot_displacement(Main_model):
     for n in range(0,Main_model.steps,20):
-        plt.plot(Main_model.X, Main_model.U[:, n], label=f'Time Step {n+1}')
+        plt.plot(Main_model.X, Main_model.U[:, n], label=f'Time Step {n}')
     
     plt.xlabel('Position X (m)')
     plt.ylabel('Displacement (m)')
@@ -107,7 +110,7 @@ def plot_displacement(Main_model):
 
 def plot_strain(Main_model):
     for n in range(Main_model.steps):
-        plt.plot(range(1, Main_model.nEle +1), Main_model.strain2[:, n], label=f'Time Step {n+1}')
+        plt.plot(range(1, Main_model.nEle +1), Main_model.strain2[:, n], label=f'Time Step {n}')
     
     plt.xlabel('Element')
     plt.ylabel('Strain')
@@ -118,7 +121,7 @@ def plot_strain(Main_model):
 
 def plot_stress(Main_model):
     for n in range(Main_model.steps):
-        plt.plot(range(1, Main_model.nEle +1), Main_model.stress2[:, n], label=f'Time Step {n+1}')
+        plt.plot(range(1, Main_model.nEle +1), Main_model.stress2[:, n], label=f'Time Step {n}')
     
     plt.xlabel('Element')
     plt.ylabel('Stress')
@@ -132,7 +135,7 @@ def plot_strain_and_stress(Main_model):
 
     # Plot strain
     for n in range(0,Main_model.steps,20):
-        ax[0].plot(range(1, Main_model.nEle + 1), Main_model.strain2[:, n], label=f'Time Step {n+1}')
+        ax[0].plot(range(1, Main_model.nEle + 1), Main_model.strain2[:, n], label=f'Time Step {n}')
     ax[0].set_xlabel('Element')
     ax[0].set_ylabel('Strain')
     ax[0].set_title('Strain over time')
@@ -141,7 +144,7 @@ def plot_strain_and_stress(Main_model):
 
     # Plot stress
     for n in range(0,Main_model.steps,20):
-        ax[1].plot(range(1, Main_model.nEle + 1), Main_model.stress2[:, n], label=f'Time Step {n+1}')
+        ax[1].plot(range(1, Main_model.nEle + 1), Main_model.stress2[:, n], label=f'Time Step {n}')
     ax[1].set_xlabel('Element')
     ax[1].set_ylabel('Stress (Pa)')
     ax[1].set_title('Stress over time')
@@ -230,9 +233,9 @@ def export_results_to_csv(Main_model, prefix="results"):
         filename = f"{prefix}_{name}.csv"
         np.savetxt(filename, data, delimiter=",", header=header, comments='')
         print(f"Saved {name} to {filename}")
-#-----------------------------------------------------------------
+#-----------------------------------------------------------------------------------------------------
 #                   FE Model
-#-----------------------------------------------------------------
+#-----------------------------------------------------------------------------------------------------
 
 def Area(Main_model, x):
     A_max = Main_model.A_max
@@ -247,18 +250,45 @@ def Area(Main_model, x):
 
     return A
 
-def Update_Plasticity(Main_model, Element, U_step):
+def pi_prime(Main_model, x):
+
+    sigma_inf = Main_model.sigma_inf
+    sigma_y = Main_model.sigma_y
+    delta = Main_model.delta
+    K = Main_model.K
+
+    output = (sigma_inf - sigma_y)*(1 - np.exp(-delta*x)) + K*x
+
+    return output
+
+def pi_pprime(Main_model, x):
+    
+    sigma_inf = Main_model.sigma_inf
+    sigma_y = Main_model.sigma_y
+    delta = Main_model.delta
+
+    output = delta*(sigma_inf - sigma_y)*np.exp(-delta*(x))
+
+    return output
+
+
+def Update_Plasticity(Main_model, Solver, Element, U_step):
     nEle = Main_model.nEle
     E = Main_model.E
     K = Main_model.K
     H = Main_model.H
     sigma_y = Main_model.sigma_y
+    sigma_inf = Main_model.sigma_inf
+    delta = Main_model.delta
+
+    delta_t = Main_model.delta_t
+    eta = Main_model.eta
 
     E_p = Main_model.E_p
     strain = Compute_Strain(Main_model, Element, U_step)
     stress = Main_model.stress
     Main_model.strain = strain
-    print("Total strain:", strain)
+    #print("Total strain:", strain)
 
     for ele in range(nEle):
 
@@ -269,7 +299,7 @@ def Update_Plasticity(Main_model, Element, U_step):
 
         strain_e = strain_local - strain_p
         sigma = strain_e * E
-        q = -chi * K
+        q = -pi_prime(Main_model, chi)
         q_bar = -chi_bar * H
 
         f_trial = np.abs(sigma - q_bar) - sigma_y + q
@@ -286,23 +316,26 @@ def Update_Plasticity(Main_model, Element, U_step):
             chi_bar_updated = chi_bar
 
         else:
-            gamma = (E + K + H)**(-1) * f_trial
+            gamma = Newton_Raphson_gamma(Main_model, Solver, f_trial, chi)
+            plastic_multi = gamma*delta_t
             sign = np.sign(sigma - q_bar)
 
-            sigma_updated = sigma - gamma*E*sign
-            q_updated = q - gamma*K
-            q_bar_updated = q_bar + gamma*H*sign
+            sigma_updated = sigma - plastic_multi*E*sign
+            pi_p = pi_prime(Main_model, chi + plastic_multi)  
+            q_updated = -pi_p
+            q_bar_updated = q_bar + plastic_multi*H*sign
+            
+            pi_pp = pi_pprime(Main_model, chi + plastic_multi) 
+            Etan_updated = E * (1 - E*(E + pi_pp + H + eta/delta_t)**(-1))
 
-            Etan_updated = E * (1 - E*(E + K + H)**(-1))
-
-            strain_p_updated = strain_p + gamma * sign
-            chi_updated = chi + gamma
-            chi_bar_updated = chi_bar - gamma * sign
+            strain_p_updated = strain_p + plastic_multi * sign
+            chi_updated = chi + plastic_multi
+            chi_bar_updated = chi_bar - plastic_multi * sign
 
         stress_updated = np.array([[sigma_updated, q_updated, q_bar_updated]])
         strain_p_vec = np.array([[strain_p_updated, chi_updated, chi_bar_updated]])
 
-        print(f"ele: {ele}, strain_e: {strain_e}, f_trial: {f_trial}, sigma: {sigma}, sign: {np.sign(sigma - q_bar)}, gamma: {gamma if f_trial > 0 else 0}, strain_p_upd: {strain_p_updated}")
+        print(f"ele: {ele + 1}, strain_e: {strain_e}, f_trial: {f_trial}, sigma: {sigma}, sign: {np.sign(sigma - q_bar)}, gamma: {gamma if f_trial > 0 else 0}, strain_p_upd: {strain_p_updated}")
 
         # Save updated variables
         Main_model.E_p[ele] = strain_p_vec
@@ -386,8 +419,6 @@ def f_internal(Main_model, Element, U_step):
     Nxi = Element.Nxi
     W_g = Element.W_g
 
-    #strain = Compute_Strain(Main_model, Element, U_step)
-    #Etan = Main_model.Etan
     sigma = Main_model.stress[:,0].copy()
 
     f_int = np.zeros((nNodes, 1))
@@ -397,7 +428,6 @@ def f_internal(Main_model, Element, U_step):
         Xe = X[Te]
         h = Xe[1] - Xe[0]
 
-        #strain_local = strain[ele]
         stress_local = sigma[ele]
 
         f_ele = np.zeros((2, 1))
@@ -410,7 +440,6 @@ def f_internal(Main_model, Element, U_step):
             X_ig = np.dot(Ni_ig, Xe)
             A_ig = Area(Main_model, X_ig)
 
-            #sigma_ig = Etan[ele] * strain_local
             sigma_ig = stress_local
 
             f_ele += A_ig * w_ig * sigma_ig * Nxi_ig
@@ -430,10 +459,10 @@ def Newton_Raphson(Main_model, Solver, Element, U_step, n):
     for i in range(max_iter + 1):
         R = -f_internal(Main_model, Element, U_step)
         Rnorm = np.linalg.norm(R[free_dofs], "fro")
-        print(f"NL iter: {i}, |R|: {Rnorm}")
+        print(f"\nNL iter: {i + 1}, |R|: {Rnorm}")
 
         if Rnorm < tol and i != 0:
-            print(f"Converged in {i} iterations!")
+            print(f"\nConverged in {i + 1} iterations!\n")
             return U_step
 
         K_global = Assemble_K_global(Main_model, Element)
@@ -443,9 +472,44 @@ def Newton_Raphson(Main_model, Solver, Element, U_step, n):
         U_step[free_dofs] += delta_u
         U_step[fixed_dofs] = np.array([0.0, Main_model.U_t[n]]).reshape(-1, 1)
 
-        Update_Plasticity(Main_model, Element, U_step)
+        Update_Plasticity(Main_model, Solver ,Element, U_step)
 
     return U_step
+
+def Newton_Raphson_gamma(Main_model, Solver, f_trial, chi):
+
+    max_iter = Solver.max_iter
+    tol = Solver.tol
+
+    E = Main_model.E
+    K = Main_model.K
+    H = Main_model.H
+    eta = Main_model.eta
+    delta_t = Main_model.delta_t
+
+    gamma = 0
+
+    for i in range(max_iter + 1):
+        pi_p_chi_gamma = pi_prime(Main_model, chi + gamma*delta_t)
+        pi_p_chi = pi_prime(Main_model, chi)            
+        g = f_trial - gamma*delta_t*(E + H + eta/delta_t) - (pi_p_chi_gamma - pi_p_chi)
+
+        pi_pp = pi_pprime(Main_model, chi + gamma*delta_t)
+        K = -(E + pi_pp + H + eta/delta_t)*delta_t                                                                # Derivative of g
+
+        gamma_updated = gamma - g/K
+        gamma = gamma_updated
+        R = np.abs(g)
+
+        print(f"    gamma NL iter: {i + 1}, |R|: {R}")
+
+        if R < tol:
+            print(f"\n  Converged in {i + 1} iterations!\n")
+            return gamma
+
+    if R > tol:
+        print(f"\n    Warning no convergence.\n")
+        return gamma
 
 def main():
 
@@ -481,16 +545,13 @@ def main():
     execution_time = end_time - start_time
     print("Execution time:", execution_time, "seconds")
 
-    plot_displacement(Main_model)
-    plot_strain_and_stress(Main_model)
+    # plot_displacement(Main_model)
+    # plot_strain_and_stress(Main_model)
     plot_midpoint_data(Main_model)
-
     #export_results_to_csv(Main_model)
-    data = np.vstack((Main_model.strain2[2,:], Main_model.stress2[2,:])).T  # shape: (steps, 2)
-    np.savetxt("Linear_hardening.csv", data, delimiter=',', header='strain,stress', comments='')
 
     #animate_displacement(Main_model)
-#-----------------------------------------------------------------
+#-----------------------------------------------------------------------------------
 
 
 if __name__ == "__main__":
