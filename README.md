@@ -9,6 +9,7 @@ The master's program focuses on computational mechanics, numerical methods (e.g.
 - Finite Element Method (FEM)
 - Computational Fluid Dynamics (CFD)
 - Nonlinear Solid Mechanics
+- Coupled Problems
 - Programming for Scientists & Engineers
 - Numerical Linear Algebra
 - Domaing decomposition & HPC
