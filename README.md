@@ -1,6 +1,6 @@
 # Numerical-methods-Engineering
 
-This repository contains scripts, exercises, and projects developed during the **MSc in Numerical Methods in Engineering** at the **Universitat Politècnica de Catalunya (UPC)**.
+Projects developed during the **MSc in Numerical Methods in Engineering** at the **Universitat Politècnica de Catalunya (UPC)**.
 
 ## 📚 About the Program
 
