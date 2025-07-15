@@ -1,78 +1,44 @@
 #include <iostream>
-#include <fstream>
-#include <string>
-using namespace std;
-
-const int nNODES = 3917;
-const int nELEM = 7182;
+#include <iomanip>
+#include <sstream>
+#include "Velocity.h"
+#include "Particles.h"
+#include "TimeIntegrator.h"
 
 int main()
-{   
-    //---------------------------------------
-    //      Read mesh
-    //---------------------------------------
-    const int col = 3;
-    double X[nNODES][col];  // Coordinates
-    int T[nELEM][col];      // Connectivity
-    double U[nNODES];       // Nodal solution (scalar)
+{
+    try {
+        // Load velocity field
+        Velocity velocity;
+        velocity.ReadVelFile("velocity.vtk");
 
-    ifstream ob("mesh.vtk");
-    if (!ob) {
-        cerr << "Cannot open file mesh.vtk" << endl;
-        return -1;
-    }
+        // Load initial particles
+        Particles particles;
+        particles.ReadParticlesFile("particles.0001.vtk");
 
-    string line;
+        // Time settings
+        double T = 4;        // total simulation time
+        double delta_t = 0.001; // time step
+        int num_steps = static_cast<int>(T / delta_t);
 
-    // Skip until POINTS
-    while (getline(ob, line)) {
-        if (line.find("POINTS") != string::npos)
-            break;
-    }
+        // Create TimeIntegrator with references to velocity points/values and particle coordinates
+        TimeIntegrator integrator(particles.coords, velocity.X_Gauss, velocity.vels_Gauss, delta_t, T);
 
-    // Read node coordinates
-    for (int i = 0; i < nNODES; ++i) {
-        ob >> X[i][0] >> X[i][1] >> X[i][2];
-    }
+        for (int step = 0; step <= num_steps; ++step) {
+            if (step == num_steps)
+                break; // finished simulation
 
-    // Skip until CELLS
-    while (getline(ob, line)) {
-        if (line.find("CELLS") != string::npos)
-            break;
-    }
+            // Update particle positions for next timestep
+            integrator.ParticlesUpdate();
 
-    // Read triangle connectivity
-    for (int i = 0; i < nELEM; ++i) {
-        int nodesPerCell;
-        ob >> nodesPerCell;
-        if (nodesPerCell != 3) {
-            cerr << "Non-triangular cell found at line " << i + 1 << ": " << nodesPerCell << " nodes." << endl;
-            return -1;
+            std::ostringstream filename;
+            filename << "output/particles_t" << std::setfill('0') << std::setw(4) << step << ".vtk";
+            particles.WriteParticlesFile(filename.str());
         }
-        ob >> T[i][0] >> T[i][1] >> T[i][2];
+
+    } catch(const std::exception& e) {
+        std::cerr << "ERROR: " << e.what() << std::endl;
+        return 1;
     }
-
-    // Skip until LOOKUP_TABLE to read nodal scalar data (U)
-    while (getline(ob, line)) {
-        if (line.find("LOOKUP_TABLE") != string::npos)
-            break;
-    }
-
-    // Read nodal scalar solution
-    for (int i = 0; i < nNODES; ++i) {
-        ob >> U[i];
-    }
-
-    ob.close();
-
-    // Sample output
-    cout << "First node coordinates: " << X[0][0] << ", " << X[0][1] << ", " << X[0][2] << endl;
-    cout << "First triangle: " << T[0][0] << ", " << T[0][1] << ", " << T[0][2] << endl;
-    cout << "First nodal value U: " << U[0] << endl;
-
-    //---------------------------------------
-    //      Read velocities
-    //---------------------------------------
-
     return 0;
 }
